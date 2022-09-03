@@ -9,7 +9,7 @@ on:
 
 permissions:
   contents: read
-  
+
 jobs:
   build-compressor:
     runs-on: ubuntu-latest
@@ -33,20 +33,20 @@ jobs:
         uses: docker/metadata-action@master
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/synapse-tools
-          flavor: |
-            latest=${{ github.ref == 'refs/heads/main' }}
+          flavor: latest=true
+#            latest=${{ github.ref == 'refs/heads/main' }}
           tags: |
-            type=raw,value=${{ env.GITHUB_REF_NAME }},enable=${{ github.ref != 'refs/heads/main' }}
             type=pep440,pattern={{raw}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push to repo
         uses: docker/build-push-action@v3
         with:
-          push: true
+          push: false
           context: .
           labels: |
-            ${{ steps.set-tag.outputs.labels }}"
+            ""${{ steps.set-tag.outputs.labels }}"
             "gitsha1=${{ github.sha }}"
           tags: "${{ steps.set-tag.outputs.tags }}"
-          file: "docker/Dockerfile.synapse_auto_compressor"
+          file: "./Dockerfile.synapse_auto_compressor"
           platforms: linux/amd64
