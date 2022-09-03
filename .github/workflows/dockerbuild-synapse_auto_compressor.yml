@@ -42,7 +42,7 @@ jobs:
       - name: Build and push to repo
         uses: docker/build-push-action@v3
         with:
-          push: false
+          push: true
           context: .
           labels: |
             ""${{ steps.set-tag.outputs.labels }}"
