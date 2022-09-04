@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 # Dockerfile to build the Synapse utility to compress state in a Postgres DB
+# and to build the postgres metrics exporter from the Prometheus community
 #
 # Note that it uses features which are only available in BuildKit - see
 # https://docs.docker.com/go/buildkit/ for more information.
@@ -7,13 +8,13 @@
 # To build the image, run `docker build` command from the same folder as
 # the dockerfile.
 #
-#    DOCKER_BUILDKIT=1 docker build -f Dockerfile-state_compressor .
+#    DOCKER_BUILDKIT=1 docker build -f Dockerfile-deb .
 #
 ###
-#     Stage 0: Install cargo, a golang compiler
+#     Stage 1: state compressor: Install cargo, a golang compiler
 ###
 
-FROM docker.io/rust:slim-bullseye as build
+FROM docker.io/rust:slim-bullseye as builder-SC
 
 WORKDIR /opt/synapse_tools
 
@@ -37,10 +38,23 @@ RUN \
     RUSTFLAGS="-C target-feature=-crt-static" cargo install --path .
 
 ###
-#     Stage 1: Final Image
+#     Stage 2:
+###
+
+FROM golang:bullseye AS builder-pgexporter
+
+WORKDIR /opt/pgexporter
+
+RUN git clone --depth=1 https://github.com/prometheus-community/postgres_exporter.git .
+
+RUN make build
+
+###
+#     Stage 3: Final Image
 ###
 
 FROM debian:bullseye-slim
 
-COPY --from=build /opt/synapse_tools/target/release/synapse_auto_compressor /usr/local/bin/synapse_auto_compressor
-COPY --from=build /opt/synapse_tools/target/release/synapse_compress_state /usr/local/bin/synapse_compress_state
+COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_auto_compressor /usr/local/bin/synapse_auto_compressor
+COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_compress_state /usr/local/bin/synapse_compress_state
+COPY --from=builder-pgexporter /opt/pgexporter /usr/local/bin/postgres_exporter
