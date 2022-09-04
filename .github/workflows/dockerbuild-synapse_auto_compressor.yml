@@ -48,5 +48,5 @@ jobs:
             ""${{ steps.set-tag.outputs.labels }}"
             "gitsha1=${{ github.sha }}"
           tags: "${{ steps.set-tag.outputs.tags }}"
-          file: "./Dockerfile.synapse_auto_compressor"
+          file: "./Dockerfile-deb"
           platforms: linux/amd64
