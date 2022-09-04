@@ -1,0 +1,45 @@
+# syntax=docker/dockerfile:1
+# Dockerfile to build the Synapse utility to compress state in a Postgres DB
+#
+# Note that it uses features which are only available in BuildKit - see
+# https://docs.docker.com/go/buildkit/ for more information.
+#
+# To build the image, run `docker build` command from the same folder as
+# the dockerfile.
+#
+#    DOCKER_BUILDKIT=1 docker build -f Dockerfile-state_compressor .
+#
+###
+#     Stage 0: Install cargo, a golang compiler
+###
+
+FROM docker.io/rust:slim-bullseye as build
+
+WORKDIR /opt/synapse_tools
+
+RUN \
+   --mount=type=cache,target=/var/cache/apt,sharing=locked \
+   --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update -qq && apt-get install -yqq \
+      git libssl-dev make pkg-config python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 https://github.com/matrix-org/rust-synapse-compress-state.git .
+
+RUN \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    RUSTFLAGS="-C target-feature=-crt-static" cargo install --path .
+
+WORKDIR /opt/synapse_tools/synapse_auto_compressor
+
+RUN \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    RUSTFLAGS="-C target-feature=-crt-static" cargo install --path .
+
+###
+#     Stage 1: Final Image
+###
+
+FROM debian:bullseye-slim
+
+COPY --from=build /opt/synapse_tools/target/release/synapse_auto_compressor /usr/local/bin/synapse_auto_compressor
