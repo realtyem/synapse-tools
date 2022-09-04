@@ -43,3 +43,4 @@ RUN \
 FROM debian:bullseye-slim
 
 COPY --from=build /opt/synapse_tools/target/release/synapse_auto_compressor /usr/local/bin/synapse_auto_compressor
+COPY --from=build /opt/synapse_tools/target/release/synapse_compress_state /usr/local/bin/synapse_compress_state
