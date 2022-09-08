@@ -38,7 +38,7 @@ RUN \
     RUSTFLAGS="-C target-feature=-crt-static" cargo install --path .
 
 ###
-#     Stage 2:
+#     Stage 2: postgres metrics exporter
 ###
 
 FROM golang:bullseye AS builder-pgexporter
@@ -50,7 +50,33 @@ RUN git clone --depth=1 https://github.com/prometheus-community/postgres_exporte
 RUN make build
 
 ###
-#     Stage 3: Final Image
+#     Stage 3: redis metrics exporter
+###
+
+# The redis exporter found at https://github.com/oliver006/redis_exporter
+#
+# Uses an alpine container to build the exporter itself with go.
+
+FROM golang:1.19-alpine as builder-redisexporter
+
+WORKDIR /opt/redis_exporter
+
+RUN apk --no-cache add ca-certificates git && \
+    git clone https://github.com/oliver006/redis_exporter.git .
+
+# ADD . /go/src/github.com/oliver006/redis_exporter/
+
+ARG SHA1="[no-sha]"
+ARG TAG="[no-tag]"
+ARG GOARCH="amd64"
+
+RUN BUILD_DATE=$(date +%F-%T) CGO_ENABLED=0 GOOS=linux GOARCH=$GOARCH go build -o /redis_exporter \
+    -ldflags  "-s -w -extldflags \"-static\" -X main.BuildVersion=$TAG -X main.BuildCommitSha=$SHA1 -X main.BuildDate=$BUILD_DATE" . && \
+    /redis_exporter -version && \
+    ls -la /redis_exporter
+
+###
+#     Last Stage: Final Image
 ###
 
 FROM debian:bullseye-slim
@@ -58,3 +84,4 @@ FROM debian:bullseye-slim
 COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_auto_compressor /usr/local/bin/synapse_auto_compressor
 COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_compress_state /usr/local/bin/synapse_compress_state
 COPY --from=builder-pgexporter /opt/pgexporter /usr/local/bin/postgres_exporter
+COPY --from=builder-redisexporter /redis_exporter /usr/local/bin/redis_exporter
