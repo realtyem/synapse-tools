@@ -161,9 +161,8 @@ RUN apt-get update \
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
             libevent-dev \
             libssl-dev \
-            libpq-dev libmariadb-dev libsqlite3-dev \
+#            libpq-dev libmariadb-dev libsqlite3-dev libmongoc-dev \
             libhiredis-dev \
-            libmongoc-dev \
             libmicrohttpd-dev
 
 # Install prometheus-client-c distribution.
