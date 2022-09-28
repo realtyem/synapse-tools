@@ -213,7 +213,7 @@ FROM debian:bullseye-slim
 
 COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_auto_compressor /out/usr/local/bin/synapse_auto_compressor
 # COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_compress_state /out/usr/local/bin/synapse_compress_state
-COPY --from=builder-pgexporter /opt/pgexporter /out/usr/local/bin/postgres_exporter
+COPY --from=builder-pgexporter /opt/pgexporter/postgres_exporter /out/usr/local/bin/postgres_exporter
 COPY --from=builder-redisexporter /redis_exporter /out/usr/local/bin/redis_exporter
 # COPY --from=coturn-build /out/ /out
 COPY --from=coturn-build /out/usr/bin/turnserver /out/usr/bin/turnserver
