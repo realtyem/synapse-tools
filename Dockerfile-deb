@@ -169,25 +169,6 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
 # Install prometheus-client-c distribution.
 COPY --from=coturn-dep-build /out/ /
 
-# Pull from github coturn sources
-# RUN git clone --depth=1 https://github.com/coturn/coturn.git .
-
-# Prepare local Coturn sources for building.
-# COPY CMakeLists.txt \
-#     configure \
-#     INSTALL \
-#     LICENSE LICENSE.OpenSSL \
-#     make-man.sh Makefile.in \
-#     postinstall.txt \
-#     README.turn* \
-#     /app/
-# COPY cmake/ /app/cmake/
-# COPY examples/ /app/examples/
-# COPY man/ /app/man/
-# COPY src/ /app/src/
-# COPY turndb/ /app/turndb/
-# WORKDIR /app/
-
 # Use Coturn sources from Git if `coturn_git_ref` is specified.
 ARG coturn_git_ref
 ARG coturn_github_url=https://github.com
@@ -220,17 +201,8 @@ RUN mkdir -p /out/ \
  # Remove default config file.
  && rm -f /out/etc/coturn/turnserver.conf.default
 
-# Install helper tools of Docker image.
-# We don't need any of this
-# COPY docker/coturn/rootfs/ /out/
-# COPY docker/coturn/debian/rootfs/ /out/
-# RUN chmod +x /out/usr/local/bin/docker-entrypoint.sh \
-#              /out/usr/local/bin/detect-external-ip.sh
-# RUN ln -s /usr/local/bin/detect-external-ip.sh \
-#           /out/usr/local/bin/detect-external-ip
-# RUN chown -R nobody:nogroup /out/var/lib/coturn/
-
 # Re-export prometheus-client-c distribution.
+# This preserves all the stuff built, in case we need docs or licenses in the future.
 COPY --from=coturn-dep-build /out/ /out/
 
 ###
@@ -243,4 +215,6 @@ COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_auto_compressor
 COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_compress_state /usr/local/bin/synapse_compress_state
 COPY --from=builder-pgexporter /opt/pgexporter /usr/local/bin/postgres_exporter
 COPY --from=builder-redisexporter /redis_exporter /usr/local/bin/redis_exporter
-COPY --from=coturn-build /out/ /out
+# COPY --from=coturn-build /out/ /out
+COPY --from=coturn-build /out/usr/bin/turnserver /usr/bin/turnserver
+COPY --from=coturn-build /out/usr/lib/ /usr/lib/
