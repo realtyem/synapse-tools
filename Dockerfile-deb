@@ -60,7 +60,7 @@ RUN make build
 #
 # Uses an alpine container to build the exporter itself with go.
 
-FROM golang:1.19-alpine as builder-redisexporter
+FROM golang:1.20-alpine as builder-redisexporter
 
 WORKDIR /opt/redis_exporter
 
