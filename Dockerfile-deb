@@ -229,6 +229,33 @@ RUN mkdir -p /out/ \
 COPY --from=coturn-dep-build /out/ /out/
 
 ###
+#     Build nginx-exporter
+###
+
+FROM golang:1.19-bullseye as nginx-exporter-builder
+ENV SRC_PATH=/go/src/github.com/google/mtail
+
+# WORKDIR /opt/nginx_exporter
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update -qq && apt-get install -yqq \
+      make \
+      git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p $SRC_PATH \
+    && git clone https://github.com/google/mtail.git $SRC_PATH \
+    && cd $SRC_PATH \
+    && make \
+    && make install \
+    && mv ./mtail /usr/local/bin/mtail \
+    && mv ./mfmt /usr/local/bin/mfmt \
+    && mv ./mdot /usr/local/bin/mdot \
+    && mv ./mgen /usr/local/bin/mgen
+
+
+###
 #     Last Stage: Final Image
 ###
 
@@ -241,3 +268,4 @@ COPY --from=builder-redisexporter /redis_exporter /out/usr/local/bin/redis_expor
 # COPY --from=coturn-build /out/ /out
 COPY --from=coturn-build /out/usr/bin/turnserver /out/usr/bin/turnserver
 COPY --from=coturn-build /out/usr/lib/ /out/usr/lib/
+COPY --from=nginx-exporter-builder /usr/local/bin/mtail /out/usr/local/bin/mtail
