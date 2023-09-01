@@ -12,6 +12,7 @@
 #
 #
 ARG coturn_git_ref='4.5.2'
+ARG postgres_exporter_git_ref='v0.11.1'
 
 ###
 #     Stage 1: state compressor: Install cargo, a golang compiler
@@ -45,7 +46,10 @@ FROM golang:bullseye AS builder-pgexporter
 
 WORKDIR /opt/pgexporter
 
-RUN git clone --depth=1 https://github.com/prometheus-community/postgres_exporter.git .
+ARG postgres_exporter_git_ref
+
+RUN git clone https://github.com/prometheus-community/postgres_exporter.git .
+RUN git checkout ${postgres_exporter_git_ref}
 
 RUN make build
 
