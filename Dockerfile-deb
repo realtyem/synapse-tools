@@ -11,14 +11,14 @@
 #    DOCKER_BUILDKIT=1 docker build -f Dockerfile-deb .
 #
 #
-ARG coturn_git_ref='4.5.2'
+ARG coturn_git_ref='4.6.2'
 ARG postgres_exporter_git_ref='v0.11.1'
 
 ###
 #     Stage 1: state compressor: Install cargo, a golang compiler
 ###
 
-FROM docker.io/rust:slim-bullseye as builder-SC
+FROM docker.io/rust:slim-bookworm as builder-SC
 
 WORKDIR /opt/synapse_tools
 
@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 #     Stage 2: postgres metrics exporter
 ###
 
-FROM golang:bullseye AS builder-pgexporter
+FROM golang:1.21-bookworm AS builder-pgexporter
 
 WORKDIR /opt/pgexporter
 
@@ -61,7 +61,7 @@ RUN make build
 #
 # Uses an alpine container to build the exporter itself with go.
 
-FROM golang:1.19-alpine as builder-redisexporter
+FROM golang:1.21-alpine as builder-redisexporter
 
 WORKDIR /opt/redis_exporter
 
@@ -87,7 +87,7 @@ RUN BUILD_DATE=$(date +%F-%T) CGO_ENABLED=0 GOOS=linux GOARCH=$GOARCH go build -
 # https://github.com/coturn/coturn
 # This part is lifted right from their own dockerfile, with a few edits
 
-FROM debian:bullseye-slim as coturn-dep-build
+FROM debian:bookworm-slim as coturn-dep-build
 
 # Install tools for building.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -159,7 +159,7 @@ RUN LIBS_DIR=/out/$(dirname $(find /usr/ -name libc.so)) \
 #
 
 # https://hub.docker.com/_/debian
-FROM debian:bullseye-slim AS coturn-build
+FROM debian:bookworm-slim AS coturn-build
 
 RUN mkdir -p /app
 
@@ -236,7 +236,7 @@ COPY --from=coturn-dep-build /out/ /out/
 #     Build nginx-exporter
 ###
 
-FROM golang:1.19-bullseye as nginx-exporter-builder
+FROM golang:1.21-bookworm as nginx-exporter-builder
 ENV SRC_PATH=/go/src/github.com/google/mtail
 
 # WORKDIR /opt/nginx_exporter
@@ -263,7 +263,7 @@ RUN mkdir -p $SRC_PATH \
 #     Last Stage: Final Image
 ###
 
-FROM debian:bullseye-slim
+FROM scratch
 
 COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_auto_compressor /out/usr/local/bin/synapse_auto_compressor
 # COPY --from=builder-SC /opt/synapse_tools/target/release/synapse_compress_state /out/usr/local/bin/synapse_compress_state
