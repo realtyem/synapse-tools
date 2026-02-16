@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 #     Stage 2: postgres metrics exporter
 ###
 
-FROM golang:1.25-trixie AS builder-pgexporter
+FROM golang:1.26-trixie AS builder-pgexporter
 
 WORKDIR /opt/pgexporter
 
@@ -61,7 +61,7 @@ RUN make build
 #
 # Uses an alpine container to build the exporter itself with go.
 
-FROM golang:1.25-alpine AS builder-redisexporter
+FROM golang:1.26-alpine AS builder-redisexporter
 
 WORKDIR /opt/redis_exporter
 
@@ -236,7 +236,7 @@ COPY --from=coturn-dep-build /out/ /out/
 #     Build nginx-exporter
 ###
 
-FROM golang:1.25-trixie AS nginx-exporter-builder
+FROM golang:1.26-trixie AS nginx-exporter-builder
 ENV SRC_PATH=/go/src/github.com/google/mtail
 
 # WORKDIR /opt/nginx_exporter
